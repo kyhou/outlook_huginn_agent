@@ -36,8 +36,8 @@ module HuginnOutlookAgent
         @client_id,
         @client_secret,
         site: "https://login.microsoftonline.com",
-        token_url: "/#{@tenant_id}/oauth2/v2.0/token",
-        authorize_url: "/#{@tenant_id}/oauth2/v2.0/authorize"
+        token_url: "/" + @tenant_id + "/oauth2/v2.0/token",
+        authorize_url: "/" + @tenant_id + "/oauth2/v2.0/authorize"
       )
 
       begin
@@ -57,7 +57,7 @@ module HuginnOutlookAgent
         @client_id,
         @client_secret,
         site: "https://login.microsoftonline.com",
-        token_url: "/#{@tenant_id}/oauth2/v2.0/token"
+        token_url: "/" + @tenant_id + "/oauth2/v2.0/token"
       )
 
       begin
