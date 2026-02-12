@@ -51,8 +51,10 @@ module HuginnOutlookAgent
         
         store_token(response)
         response.token
+      rescue OAuth2::Error => e
+        raise "OAuth2 Error: #{e.message} - Check client_id, client_secret, and tenant_id"
       rescue => e
-        raise "Failed to acquire access token: #{e.message}"
+        raise "Failed to acquire access token: #{e.message} (#{e.class})"
       end
     end
 
@@ -76,6 +78,8 @@ module HuginnOutlookAgent
 
         store_token(response)
         response.token
+      rescue OAuth2::Error => e
+        raise "OAuth2 Error during refresh: #{e.message}"
       rescue => e
         # If refresh fails, try to acquire new token
         acquire_new_token
