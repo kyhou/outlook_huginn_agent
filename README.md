@@ -25,7 +25,11 @@ ADDITIONAL_GEMS=huginn_outlook_agent
 
 And then execute:
 
-    $ bundle
+```bash
+$ bundle
+```
+
+**Note:** This agent uses `oauth2 ~> 1.4` to maintain compatibility with existing Huginn dependencies like `dropbox-api`. The OAuth functionality works identically with this version.
 
 ## Microsoft Graph API Setup
 

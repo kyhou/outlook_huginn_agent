@@ -77,7 +77,7 @@ module HuginnOutlookAgent
 
     def store_token(response)
       @access_token = response.token
-      @refresh_token = response.refresh_token if response.refresh_token
+      @refresh_token = response.refresh_token if response.respond_to?(:refresh_token) && response.refresh_token
       @expires_at = response.expires_at ? Time.parse(response.expires_at.to_s) : Time.now + 3600
     end
   end
