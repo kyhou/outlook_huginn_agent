@@ -32,12 +32,16 @@ module HuginnOutlookAgent
     private
 
     def acquire_new_token
+      # Build URLs safely without interpolation that might conflict with Liquid
+      token_url = "https://login.microsoftonline.com/" + @tenant_id.to_s + "/oauth2/v2.0/token"
+      authorize_url = "https://login.microsoftonline.com/" + @tenant_id.to_s + "/oauth2/v2.0/authorize"
+      
       client = OAuth2::Client.new(
         @client_id,
         @client_secret,
         site: "https://login.microsoftonline.com",
-        token_url: "/" + @tenant_id + "/oauth2/v2.0/token",
-        authorize_url: "/" + @tenant_id + "/oauth2/v2.0/authorize"
+        token_url: token_url,
+        authorize_url: authorize_url
       )
 
       begin
@@ -53,11 +57,14 @@ module HuginnOutlookAgent
     end
 
     def refresh_access_token
+      # Build URLs safely without interpolation that might conflict with Liquid
+      token_url = "https://login.microsoftonline.com/" + @tenant_id.to_s + "/oauth2/v2.0/token"
+      
       client = OAuth2::Client.new(
         @client_id,
         @client_secret,
         site: "https://login.microsoftonline.com",
-        token_url: "/" + @tenant_id + "/oauth2/v2.0/token"
+        token_url: token_url
       )
 
       begin
