@@ -27,4 +27,5 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency "huginn_agent"
   spec.add_runtime_dependency "httparty", "~> 0.20"
   spec.add_runtime_dependency "json", "~> 2.6"
+  spec.add_runtime_dependency "oauth2", "~> 2.0"
 end

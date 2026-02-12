@@ -1,5 +1,6 @@
 require 'httparty'
 require 'json'
+require_relative 'oauth_helper'
 
 module Agents
   class OutlookSenderAgent < Agent
@@ -31,7 +32,12 @@ module Agents
 
     def default_options
       {
+        'auth_method' => 'oauth',
+        'client_id' => '',
+        'client_secret' => '',
+        'tenant_id' => '',
         'access_token' => '',
+        'refresh_token' => '',
         'to' => '',
         'subject' => '',
         'body' => '',
@@ -42,7 +48,14 @@ module Agents
     end
 
     def validate_options
-      errors.add(:base, "Access token is required") unless options['access_token'].present?
+      if options['auth_method'] == 'oauth'
+        errors.add(:base, "Client ID is required for OAuth") unless options['client_id'].present?
+        errors.add(:base, "Client Secret is required for OAuth") unless options['client_secret'].present?
+        errors.add(:base, "Tenant ID is required for OAuth") unless options['tenant_id'].present?
+      else
+        errors.add(:base, "Access token is required") unless options['access_token'].present?
+      end
+      
       errors.add(:base, "Recipient (to) is required") unless options['to'].present?
       errors.add(:base, "Subject is required") unless options['subject'].present?
       errors.add(:base, "Body is required") unless options['body'].present?
@@ -64,13 +77,34 @@ module Agents
 
     private
 
+    def oauth_helper
+      @oauth_helper ||= begin
+        if options['auth_method'] == 'oauth'
+          HuginnOutlookAgent::OAuthHelper.new(
+            options['client_id'],
+            options['client_secret'], 
+            options['tenant_id'],
+            options['refresh_token']
+          )
+        end
+      end
+    end
+
+    def current_access_token
+      if options['auth_method'] == 'oauth' && oauth_helper
+        oauth_helper.get_access_token
+      else
+        options['access_token']
+      end
+    end
+
     def graph_api_url
       'https://graph.microsoft.com/v1.0'
     end
 
     def headers
       {
-        'Authorization' => "Bearer #{options['access_token']}",
+        'Authorization' => "Bearer #{current_access_token}",
         'Content-Type' => 'application/json'
       }
     end

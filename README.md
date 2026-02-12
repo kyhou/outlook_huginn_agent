@@ -36,7 +36,7 @@ Before using this agent, you need to set up Microsoft Graph API access:
    - Navigate to "Azure Active Directory" → "App registrations"
    - Click "New registration"
    - Give it a name (e.g., "Huginn Outlook Integration")
-   - Choose "Accounts in any organizational directory"
+   - Choose **"Accounts in any organizational directory (Any Microsoft Entra ID tenant - Multitenant)"**
    - Note the Application (client) ID and Directory (tenant) ID
 
 2. **Configure API Permissions**
@@ -52,9 +52,25 @@ Before using this agent, you need to set up Microsoft Graph API access:
    - Click "New client secret"
    - Copy the secret value immediately (it won't be shown again)
 
-4. **Get Access Token**
-   - Use OAuth 2.0 flow or Microsoft Authentication Library (MSAL)
-   - Store the access token securely for use in the agent
+4. **Configure Agent Authentication**
+   
+   The agents support two authentication methods:
+
+   **Option A: Built-in OAuth (Recommended)**
+   - Set `auth_method` to `"oauth"`
+   - Provide `client_id`, `client_secret`, and `tenant_id`
+   - The agent will automatically handle token acquisition and refresh
+   - No external token management required
+
+   **Option B: Manual Access Token**
+   - Set `auth_method` to `"token"` (or leave blank)
+   - Provide a manually obtained `access_token`
+   - You'll need to refresh the token when it expires (~1 hour)
+
+   **Important Notes:**
+   - OAuth is the recommended method for production use
+   - The agent handles token refresh automatically with OAuth
+   - Store credentials securely using Huginn's credentials system
 
 ## Usage
 
@@ -62,9 +78,25 @@ Before using this agent, you need to set up Microsoft Graph API access:
 
 Configure the agent with these options:
 
+**Using OAuth (Recommended):**
 ```json
 {
   "mode": "receive",
+  "auth_method": "oauth",
+  "client_id": "your_client_id",
+  "client_secret": "your_client_secret",
+  "tenant_id": "your_tenant_id",
+  "folder": "inbox",
+  "since": "2023-01-01T00:00:00Z",
+  "mark_as_read": false
+}
+```
+
+**Using Manual Access Token:**
+```json
+{
+  "mode": "receive",
+  "auth_method": "token",
   "access_token": "your_access_token_here",
   "folder": "inbox",
   "since": "2023-01-01T00:00:00Z",
@@ -74,7 +106,11 @@ Configure the agent with these options:
 
 **Options:**
 - `mode`: Must be "receive"
-- `access_token`: Microsoft Graph API access token
+- `auth_method`: "oauth" (recommended) or "token"
+- `client_id`: Azure AD application client ID (for OAuth)
+- `client_secret`: Azure AD application client secret (for OAuth)
+- `tenant_id`: Azure AD directory tenant ID (for OAuth)
+- `access_token`: Microsoft Graph API access token (for token method)
 - `folder`: One of "inbox", "sent", "drafts", "deleted"
 - `since`: ISO 8601 datetime to filter emails (optional)
 - `mark_as_read`: Whether to mark processed emails as read (default: false)
@@ -97,8 +133,26 @@ Configure the agent with these options:
 
 Configure the agent with these options:
 
+**Using OAuth (Recommended):**
 ```json
 {
+  "auth_method": "oauth",
+  "client_id": "your_client_id",
+  "client_secret": "your_client_secret",
+  "tenant_id": "your_tenant_id",
+  "to": "recipient@example.com",
+  "subject": "Alert: {{message}}",
+  "body": "<h1>{{title}}</h1><p>{{content}}</p>",
+  "content_type": "HTML",
+  "cc": "cc@example.com",
+  "bcc": ""
+}
+```
+
+**Using Manual Access Token:**
+```json
+{
+  "auth_method": "token",
   "access_token": "your_access_token_here",
   "to": "recipient@example.com",
   "subject": "Alert: {{message}}",
@@ -110,7 +164,11 @@ Configure the agent with these options:
 ```
 
 **Options:**
-- `access_token`: Microsoft Graph API access token
+- `auth_method`: "oauth" (recommended) or "token"
+- `client_id`: Azure AD application client ID (for OAuth)
+- `client_secret`: Azure AD application client secret (for OAuth)
+- `tenant_id`: Azure AD directory tenant ID (for OAuth)
+- `access_token`: Microsoft Graph API access token (for token method)
 - `to`: Recipient email address (supports liquid templating)
 - `subject`: Email subject (supports liquid templating)
 - `body`: Email body (supports liquid templating and HTML)
