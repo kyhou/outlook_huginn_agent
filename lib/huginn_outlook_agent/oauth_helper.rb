@@ -58,9 +58,11 @@ module Agents
       )
 
       begin
-        response = client.client_credentials.get_token(
+        # Try different approach for client credentials
+        response = client.get_token({
+          grant_type: 'client_credentials',
           scope: 'https://graph.microsoft.com/.default'
-        )
+        })
         
         store_token(response)
         response.token
