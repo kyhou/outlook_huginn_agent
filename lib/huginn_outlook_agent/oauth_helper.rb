@@ -2,7 +2,7 @@ require 'oauth2'
 require 'json'
 require 'time'
 
-module HuginnOutlookAgent
+module Agents
   class OAuthHelper
     attr_reader :client_id, :client_secret, :tenant_id, :access_token, :refresh_token, :expires_at
 

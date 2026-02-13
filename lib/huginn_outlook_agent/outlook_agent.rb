@@ -3,7 +3,7 @@ require 'json'
 require 'time'
 require_relative 'oauth_helper'
 
-module HuginnOutlookAgent
+module Agents
   class OutlookAgent < Agent
     cannot_receive_events!
     can_dry_run!
@@ -114,7 +114,7 @@ module HuginnOutlookAgent
       @oauth_helper ||= begin
         if options['auth_method'] == 'oauth'
           interpolated = interpolate_options({})
-          HuginnOutlookAgent::OAuthHelper.new(
+          Agents::OAuthHelper.new(
             interpolated['client_id'],
             interpolated['client_secret'], 
             interpolated['tenant_id'],
