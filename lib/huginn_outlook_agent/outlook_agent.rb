@@ -154,7 +154,7 @@ module Agents
       if options['since'].present?
         begin
           since_time = Time.parse(options['since']).iso8601
-          params['$filter'] = "receivedDateTime ge #{since_time}"
+          params['$filter'] = "receivedDateTime ge '#{since_time}'"
         rescue => e
           error("Invalid 'since' date format: #{e.message}")
           return
