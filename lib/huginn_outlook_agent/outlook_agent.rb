@@ -113,7 +113,6 @@ module Agents
     def oauth_helper
       @oauth_helper ||= begin
         if options['auth_method'] == 'oauth'
-          interpolated = interpolate_options
           Agents::OAuthHelper.new(
             interpolated['client_id'] || '',
             interpolated['client_secret'] || '', 
@@ -266,17 +265,6 @@ module Agents
           }
         }
       end
-    end
-
-    def interpolate_options(payload)
-      interpolated = {}
-      
-      %w[to subject body cc bcc content_type].each do |field|
-        value = options[field]
-        interpolated[field] = value.present? ? liquid_interpolate(value, payload) : ''
-      end
-      
-      interpolated
     end
   end
 end

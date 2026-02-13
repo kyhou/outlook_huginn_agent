@@ -81,12 +81,11 @@ module Agents
     def oauth_helper
       @oauth_helper ||= begin
         if options['auth_method'] == 'oauth'
-          interpolated = interpolate_options({})
           Agents::OAuthHelper.new(
-            interpolated['client_id'],
-            interpolated['client_secret'], 
-            interpolated['tenant_id'],
-            interpolated['refresh_token']
+            interpolated['client_id'] || '',
+            interpolated['client_secret'] || '', 
+            interpolated['tenant_id'] || '',
+            interpolated['refresh_token'] || ''
           )
         end
       end
@@ -112,25 +111,25 @@ module Agents
     end
 
     def send_email(event)
-      interpolated = interpolate_options(event.payload)
+      interpolated_opts = interpolate_options(event.payload)
       
       payload = {
         'message' => {
-          'subject' => interpolated['subject'],
+          'subject' => interpolated_opts['subject'],
           'body' => {
-            'contentType' => interpolated['content_type'] || 'HTML',
-            'content' => interpolated['body']
+            'contentType' => interpolated_opts['content_type'] || 'HTML',
+            'content' => interpolated_opts['body']
           },
-          'toRecipients' => format_recipients(interpolated['to'])
+          'toRecipients' => format_recipients(interpolated_opts['to'])
         }
       }
       
-      if interpolated['cc'].present?
-        payload['message']['ccRecipients'] = format_recipients(interpolated['cc'])
+      if interpolated_opts['cc'].present?
+        payload['message']['ccRecipients'] = format_recipients(interpolated_opts['cc'])
       end
       
-      if interpolated['bcc'].present?
-        payload['message']['bccRecipients'] = format_recipients(interpolated['bcc'])
+      if interpolated_opts['bcc'].present?
+        payload['message']['bccRecipients'] = format_recipients(interpolated_opts['bcc'])
       end
       
       url = "#{graph_api_url}/me/sendMail"
@@ -141,7 +140,7 @@ module Agents
         return
       end
       
-      log("Email sent successfully to #{interpolated['to']}")
+      log("Email sent successfully to #{interpolated_opts['to']}")
     end
 
     def format_recipients(recipients)
@@ -156,15 +155,5 @@ module Agents
       end
     end
 
-    def interpolate_options(payload)
-      interpolated = {}
-      
-      %w[to subject body cc bcc content_type].each do |field|
-        value = options[field]
-        interpolated[field] = value.present? ? liquid_interpolate(value, payload) : ''
-      end
-      
-      interpolated
-    end
   end
 end
