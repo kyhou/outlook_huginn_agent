@@ -41,9 +41,9 @@ module Agents
 
     def acquire_new_token
       # Debug: Log credential values (without exposing secrets)
-      puts "DEBUG: client_id present: #{@client_id.present?}"
-      puts "DEBUG: client_secret present: #{@client_secret.present?}"
-      puts "DEBUG: tenant_id present: #{@tenant_id.present?}"
+      puts "DEBUG: client_id present: #{@client_id && !@client_id.empty?}"
+      puts "DEBUG: client_secret present: #{@client_secret && !@client_secret.empty?}"
+      puts "DEBUG: tenant_id present: #{@tenant_id && !@tenant_id.empty?}"
       puts "DEBUG: tenant_id value: '#{@tenant_id}'"
       puts "DEBUG: client_id length: #{@client_id&.length || 0}"
       puts "DEBUG: client_secret length: #{@client_secret&.length || 0}"
@@ -77,8 +77,21 @@ module Agents
         response.token
       rescue OAuth2::Error => e
         puts "DEBUG: OAuth2::Error details: #{e.class} - #{e.message}"
+        puts "DEBUG: OAuth2::Error response: #{e.response.body if e.response}"
         puts "DEBUG: OAuth2::Error backtrace: #{e.backtrace&.first(3)}"
-        raise "OAuth2 Error: #{e.message} - Check client_id, client_secret, and tenant_id"
+        
+        # Parse the error response for more details
+        error_details = ""
+        if e.response && e.response.body
+          begin
+            error_json = JSON.parse(e.response.body)
+            error_details = " - #{error_json['error_description'] || error_json['error'] || ''}"
+          rescue JSON::ParserError
+            error_details = " - #{e.response.body}"
+          end
+        end
+        
+        raise "OAuth2 Error: #{e.message}#{error_details} - Check client_id, client_secret, and tenant_id"
       rescue => e
         puts "DEBUG: General error details: #{e.class} - #{e.message}"
         puts "DEBUG: General error backtrace: #{e.backtrace&.first(3)}"
