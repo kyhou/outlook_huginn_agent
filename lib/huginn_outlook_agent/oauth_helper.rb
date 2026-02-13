@@ -89,6 +89,9 @@ module Agents
     end
 
     def refresh_access_token
+      # Only attempt refresh if we have a refresh token
+      return acquire_new_token unless @refresh_token && !@refresh_token.empty?
+      
       # Build URLs safely without interpolation that might conflict with Liquid
       token_url = "https://login.microsoftonline.com/" + @tenant_id.to_s + "/oauth2/v2.0/token"
       
@@ -109,7 +112,8 @@ module Agents
         store_token(response)
         response.token
       rescue OAuth2::Error => e
-        raise "OAuth2 Error during refresh: #{e.message}"
+        # If refresh fails, try to acquire new token
+        acquire_new_token
       rescue => e
         # If refresh fails, try to acquire new token
         acquire_new_token
