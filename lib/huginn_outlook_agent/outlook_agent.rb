@@ -113,11 +113,12 @@ module Agents
     def oauth_helper
       @oauth_helper ||= begin
         if options['auth_method'] == 'oauth'
+          interpolated = interpolate_options
           Agents::OAuthHelper.new(
-            options['client_id'],
-            options['client_secret'], 
-            options['tenant_id'],
-            options['refresh_token']
+            interpolated['client_id'] || '',
+            interpolated['client_secret'] || '', 
+            interpolated['tenant_id'] || '',
+            interpolated['refresh_token'] || ''
           )
         end
       end
