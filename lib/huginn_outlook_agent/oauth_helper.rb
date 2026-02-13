@@ -45,46 +45,32 @@ module Agents
         raise "Tenant ID is nil or empty"
       end
       
-      # Build URLs safely without interpolation that might conflict with Liquid
+      # Use HTTParty directly for OAuth2 client credentials flow
       token_url = "https://login.microsoftonline.com/" + @tenant_id.to_s + "/oauth2/v2.0/token"
-      authorize_url = "https://login.microsoftonline.com/" + @tenant_id.to_s + "/oauth2/v2.0/authorize"
       
-      client = OAuth2::Client.new(
-        @client_id,
-        @client_secret,
-        site: "https://login.microsoftonline.com",
-        token_url: token_url,
-        authorize_url: authorize_url
-      )
+      headers = {
+        'Content-Type' => 'application/x-www-form-urlencoded'
+      }
+      
+      body = URI.encode_www_form({
+        grant_type: 'client_credentials',
+        client_id: @client_id,
+        client_secret: @client_secret,
+        scope: 'https://graph.microsoft.com/.default'
+      })
 
       begin
-        # Try different approach for client credentials
-        response = client.get_token({
-          grant_type: 'client_credentials',
-          scope: 'https://graph.microsoft.com/.default'
-        })
+        response = HTTParty.post(token_url, body: body, headers: headers)
         
-        store_token(response)
-        response.token
-      rescue OAuth2::Error => e
-        # Parse the error response for more details
-        error_details = ""
-        if e.response
-          if e.response.body
-            begin
-              error_json = JSON.parse(e.response.body)
-              error_details = " - #{error_json['error_description'] || error_json['error'] || ''}"
-            rescue JSON::ParserError
-              error_details = " - #{e.response.body}"
-            end
-          else
-            error_details = " - No response body"
-          end
-        else
-          error_details = " - No response object"
+        unless response.success?
+          raise "OAuth2 Error: #{response.code} - #{response.body}"
         end
         
-        raise "OAuth2 Error: #{e.message}#{error_details} - Check client_id, client_secret, and tenant_id"
+        data = JSON.parse(response.body)
+        store_token_response(data)
+        data['access_token']
+      rescue JSON::ParserError => e
+        raise "Failed to parse OAuth response: #{e.message}"
       rescue => e
         raise "Failed to acquire access token: #{e.message} (#{e.class})"
       end
@@ -122,10 +108,23 @@ module Agents
       end
     end
 
+    def store_token_response(data)
+      @access_token = data['access_token']
+      @refresh_token = data['refresh_token'] if data['refresh_token']
+      @expires_at = data['expires_in'] ? Time.now + data['expires_in'].to_i : Time.now + 3600
+    end
+
     def store_token(response)
-      @access_token = response.token
-      @refresh_token = response.refresh_token if response.respond_to?(:refresh_token) && response.refresh_token
-      @expires_at = response.expires_at ? Time.parse(response.expires_at.to_s) : Time.now + 3600
+      # Handle both OAuth2 gem response and direct HTTP response
+      if response.respond_to?(:token)
+        # OAuth2 gem response object
+        @access_token = response.token
+        @refresh_token = response.refresh_token if response.respond_to?(:refresh_token) && response.refresh_token
+        @expires_at = response.expires_at ? Time.parse(response.expires_at.to_s) : Time.now + 3600
+      else
+        # Direct HTTP response hash
+        store_token_response(response)
+      end
     end
   end
 end
