@@ -143,83 +143,9 @@ module Agents
     end
 
     def receive_emails
-      # Try to get the authenticated user first, then use their ID
-      begin
-        # Get the user info first
-        user_response = HTTParty.get("#{graph_api_url}/me", headers: headers)
-        if user_response.success?
-          user_data = JSON.parse(user_response.body)
-          user_id = user_data['id'] || user_data['mail'] # Try different possible user ID fields
-          folder_path = options['folder'] == 'inbox' ? "users/#{user_id}/mailFolders/inbox/messages" : "users/#{user_id}/mailFolders/#{options['folder']}/messages"
-        else
-          # Fallback: try without user ID (some Graph API versions support this)
-          folder_path = options['folder'] == 'inbox' ? 'me/mailFolders/inbox/messages' : "me/mailFolders/#{options['folder']}/messages"
-        end
-      rescue => e
-        # If getting user fails, try the original approach
-        folder_path = options['folder'] == 'inbox' ? 'me/mailFolders/inbox/messages' : "me/mailFolders/#{options['folder']}/messages"
-      end
-      
-      url = "#{graph_api_url}/#{folder_path}"
-      
-      params = {
-        '$select' => 'id,subject,from,toRecipients,ccRecipients,bccRecipients,body,receivedDateTime,isRead',
-        '$orderby' => 'receivedDateTime desc'
-      }
-      
-      if options['since'].present?
-        begin
-          since_time = Time.parse(options['since']).iso8601
-          params['$filter'] = "receivedDateTime ge '#{since_time}'"
-        rescue => e
-          error("Invalid 'since' date format: #{e.message}")
-          return
-        end
-      end
-      
-      response = HTTParty.get(url, query: params, headers: headers)
-      
-      # Debug logging to see the exact request
-      log("Graph API URL: #{url}")
-      log("Graph API Params: #{params.inspect}")
-      log("Graph API Headers: #{headers.inspect}")
-      log("Response Code: #{response.code}")
-      log("Response Body: #{response.body}")
-      
-      unless response.success?
-        error("Failed to fetch emails: #{response.code} - #{response.message}")
-        return
-      end
-      
-      data = JSON.parse(response.body)
-      emails = data['value'] || []
-      
-      emails.each do |email|
-        next if email['isRead'] && options['since'].blank?
-        
-        payload = {
-          'id' => email['id'],
-          'subject' => email['subject'] || '(No Subject)',
-          'from' => extract_email_address(email['from']),
-          'to' => email['toRecipients']&.map { |r| extract_email_address(r) },
-          'cc' => email['ccRecipients']&.map { |r| extract_email_address(r) },
-          'bcc' => email['bccRecipients']&.map { |r| extract_email_address(r) },
-          'body' => extract_body(email),
-          'received_at' => email['receivedDateTime'],
-          'is_read' => email['isRead']
-        }
-        
-        create_event(payload: payload)
-        
-        if options['mark_as_read']
-          mark_as_read(email['id'])
-        end
-      end
-      
-      if options['since'].blank? && emails.any?
-        last_email_time = emails.first['receivedDateTime']
-        remember(:last_check, last_email_time)
-      end
+      # Client credentials flow cannot access user mailboxes - need to inform user
+      error("Client credentials authentication cannot access user mailboxes. Please use delegated authentication with user login instead of application permissions.")
+      return
     end
 
     def send_email(event)
