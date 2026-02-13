@@ -7,6 +7,14 @@ module Agents
     attr_reader :client_id, :client_secret, :tenant_id, :access_token, :refresh_token, :expires_at
 
     def initialize(client_id, client_secret, tenant_id, refresh_token = nil)
+      puts "DEBUG: OAuthHelper.initialize called"
+      puts "DEBUG: client_id type: #{client_id.class}"
+      puts "DEBUG: client_secret type: #{client_secret.class}"
+      puts "DEBUG: tenant_id type: #{tenant_id.class}"
+      puts "DEBUG: client_id value: '#{client_id}'"
+      puts "DEBUG: client_secret value: '#{client_secret ? '[HIDDEN]' : 'nil'}'"
+      puts "DEBUG: tenant_id value: '#{tenant_id}'"
+      
       @client_id = client_id
       @client_secret = client_secret
       @tenant_id = tenant_id
@@ -37,6 +45,8 @@ module Agents
       puts "DEBUG: client_secret present: #{@client_secret.present?}"
       puts "DEBUG: tenant_id present: #{@tenant_id.present?}"
       puts "DEBUG: tenant_id value: '#{@tenant_id}'"
+      puts "DEBUG: client_id length: #{@client_id&.length || 0}"
+      puts "DEBUG: client_secret length: #{@client_secret&.length || 0}"
       
       # Build URLs safely without interpolation that might conflict with Liquid
       token_url = "https://login.microsoftonline.com/" + @tenant_id.to_s + "/oauth2/v2.0/token"
@@ -52,18 +62,26 @@ module Agents
         authorize_url: authorize_url
       )
 
+      puts "DEBUG: OAuth client created successfully"
+      puts "DEBUG: Attempting to get token with scope: https://graph.microsoft.com/.default"
+
       begin
         response = client.client_credentials.get_token(
           scope: 'https://graph.microsoft.com/.default'
         )
         
+        puts "DEBUG: Token response received: #{response.class}"
+        puts "DEBUG: Token acquired successfully: #{response.token ? 'YES' : 'NO'}"
+        
         store_token(response)
         response.token
       rescue OAuth2::Error => e
         puts "DEBUG: OAuth2::Error details: #{e.class} - #{e.message}"
+        puts "DEBUG: OAuth2::Error backtrace: #{e.backtrace&.first(3)}"
         raise "OAuth2 Error: #{e.message} - Check client_id, client_secret, and tenant_id"
       rescue => e
         puts "DEBUG: General error details: #{e.class} - #{e.message}"
+        puts "DEBUG: General error backtrace: #{e.backtrace&.first(3)}"
         raise "Failed to acquire access token: #{e.message} (#{e.class})"
       end
     end
