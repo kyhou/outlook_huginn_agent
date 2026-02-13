@@ -163,6 +163,13 @@ module Agents
       
       response = HTTParty.get(url, query: params, headers: headers)
       
+      # Debug logging to see the exact request
+      log("Graph API URL: #{url}")
+      log("Graph API Params: #{params.inspect}")
+      log("Graph API Headers: #{headers.inspect}")
+      log("Response Code: #{response.code}")
+      log("Response Body: #{response.body}")
+      
       unless response.success?
         error("Failed to fetch emails: #{response.code} - #{response.message}")
         return
