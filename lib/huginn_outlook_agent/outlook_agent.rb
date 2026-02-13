@@ -3,9 +3,11 @@ require 'json'
 require 'time'
 require_relative 'oauth_helper'
 
-module Agents
+module HuginnOutlookAgent
   class OutlookAgent < Agent
-    default_schedule '5m'
+    cannot_receive_events!
+    can_dry_run!
+    default_schedule 'every_5m'
 
     description <<-MD
       The Outlook Agent integrates with Microsoft Outlook via the Microsoft Graph API to:

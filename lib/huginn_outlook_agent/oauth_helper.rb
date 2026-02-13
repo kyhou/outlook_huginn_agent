@@ -32,9 +32,17 @@ module HuginnOutlookAgent
     private
 
     def acquire_new_token
+      # Debug: Log credential values (without exposing secrets)
+      puts "DEBUG: client_id present: #{@client_id.present?}"
+      puts "DEBUG: client_secret present: #{@client_secret.present?}"
+      puts "DEBUG: tenant_id present: #{@tenant_id.present?}"
+      puts "DEBUG: tenant_id value: '#{@tenant_id}'"
+      
       # Build URLs safely without interpolation that might conflict with Liquid
       token_url = "https://login.microsoftonline.com/" + @tenant_id.to_s + "/oauth2/v2.0/token"
       authorize_url = "https://login.microsoftonline.com/" + @tenant_id.to_s + "/oauth2/v2.0/authorize"
+      
+      puts "DEBUG: token_url: #{token_url}"
       
       client = OAuth2::Client.new(
         @client_id,
@@ -52,8 +60,10 @@ module HuginnOutlookAgent
         store_token(response)
         response.token
       rescue OAuth2::Error => e
+        puts "DEBUG: OAuth2::Error details: #{e.class} - #{e.message}"
         raise "OAuth2 Error: #{e.message} - Check client_id, client_secret, and tenant_id"
       rescue => e
+        puts "DEBUG: General error details: #{e.class} - #{e.message}"
         raise "Failed to acquire access token: #{e.message} (#{e.class})"
       end
     end

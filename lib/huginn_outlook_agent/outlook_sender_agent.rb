@@ -2,9 +2,10 @@ require 'httparty'
 require 'json'
 require_relative 'oauth_helper'
 
-module Agents
+module HuginnOutlookAgent
   class OutlookSenderAgent < Agent
-    cannot_receive_events!
+    can_dry_run!
+    default_schedule 'never'
 
     description <<-MD
       The Outlook Sender Agent sends emails through Microsoft Outlook via Microsoft Graph API.
