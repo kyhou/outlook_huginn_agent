@@ -143,7 +143,23 @@ module Agents
     end
 
     def receive_emails
-      folder_path = options['folder'] == 'inbox' ? 'me/mailFolders/inbox/messages' : "me/mailFolders/#{options['folder']}/messages"
+      # Try to get the authenticated user first, then use their ID
+      begin
+        # Get the user info first
+        user_response = HTTParty.get("#{graph_api_url}/me", headers: headers)
+        if user_response.success?
+          user_data = JSON.parse(user_response.body)
+          user_id = user_data['id'] || user_data['mail'] # Try different possible user ID fields
+          folder_path = options['folder'] == 'inbox' ? "users/#{user_id}/mailFolders/inbox/messages" : "users/#{user_id}/mailFolders/#{options['folder']}/messages"
+        else
+          # Fallback: try without user ID (some Graph API versions support this)
+          folder_path = options['folder'] == 'inbox' ? 'me/mailFolders/inbox/messages' : "me/mailFolders/#{options['folder']}/messages"
+        end
+      rescue => e
+        # If getting user fails, try the original approach
+        folder_path = options['folder'] == 'inbox' ? 'me/mailFolders/inbox/messages' : "me/mailFolders/#{options['folder']}/messages"
+      end
+      
       url = "#{graph_api_url}/#{folder_path}"
       
       params = {
